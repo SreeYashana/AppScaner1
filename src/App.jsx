@@ -1,9 +1,9 @@
 import ButtonGradient from "./assets/svg/ButtonGradient";
-import Benefits from "./componets/Benefits";
-import Button from "./componets/Button";
-import Header from "./componets/Header";
-import Hero from "./componets/Hero";
-import Collaboration from "./componets/Collaboration";
+// import Benefits from "./componets/Benefits";
+// // import Button from "./componets/Button";
+// import Header from "./componets/Header";
+// import Hero from "./componets/Hero";
+// import Collaboration from "./componets/Collaboration";
 import Mobsf from "./componets/Mobsf";
 
 const App = () => {
