@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import {
   Button,
@@ -40,7 +40,7 @@ ChartJS.register(
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
 const API_KEY =
-  "4c2860337ced384f2e8b59651b6c06959f657de202b6f4dfadae22e6337e48a7";
+  "d249dd8751723a4b376cdbe6551246626d86c8c5661b0f273494566ac647fd48";
 
 function App() {
   const [file, setFile] = useState(null);
@@ -53,6 +53,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("upload");
+
+  const scanReportRef = useRef(null);
+  const scorecardReportRef = useRef(null);
 
   const filterScanReport = (report) => {
     const fieldsToRemove = [
@@ -73,8 +76,7 @@ function App() {
       Object.entries(report).filter(([key]) => !fieldsToRemove.includes(key))
     );
   };
-
-  const ReportTable = ({ data, title }) => {
+  const ReportTable = ({ data, title, ref }) => {
     if (!data) return null;
 
     const renderNestedValue = (value, indent = 0) => {
@@ -84,15 +86,11 @@ function App() {
 
       if (Array.isArray(value)) {
         return (
-          <div className="nested-array">
+          <div className="nested-array" style={{ marginLeft: `${indent}px` }}>
             {value.map((item, index) => (
-              <div
-                key={index}
-                className="array-item"
-                style={{ marginLeft: `${indent}px` }}
-              >
+              <div key={index} className="array-item">
                 {typeof item === "object"
-                  ? renderNestedValue(item, indent + 20)
+                  ? renderNestedValue(item, indent + 10)
                   : String(item)}
               </div>
             ))}
@@ -102,17 +100,14 @@ function App() {
 
       if (typeof value === "object") {
         return (
-          <Table bordered hover size="sm" className="nested-table">
+          <Table bordered size="sm" className="nested-table mb-0">
             <tbody>
               {Object.entries(value).map(([key, val]) => (
                 <tr key={key}>
-                  <td
-                    className="fw-bold"
-                    style={{ width: "30%", paddingLeft: `${indent + 10}px` }}
-                  >
+                  <td style={{ width: "120px", whiteSpace: "nowrap" }}>
                     {key}
                   </td>
-                  <td>{renderNestedValue(val, indent + 20)}</td>
+                  <td>{renderNestedValue(val, indent + 10)}</td>
                 </tr>
               ))}
             </tbody>
@@ -124,32 +119,36 @@ function App() {
     };
 
     return (
-      <Card className="my-4 report-card cyber-card">
-        <Card.Header className="cyber-header">
+      <Card className="my-3 report-card" ref={ref}>
+        <Card.Header className="cyber-header py-2">
           <h5 className="mb-0">
             <i className="fas fa-shield-alt me-2"></i>
             {title}
           </h5>
         </Card.Header>
-        <Card.Body className="cyber-body">
-          <Table striped bordered hover responsive className="mb-0 cyber-table">
-            <thead>
-              <tr>
-                <th style={{ width: "30%" }}>Field</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(data).map(([key, value]) => (
-                <tr key={key}>
-                  <td className="fw-bold">
-                    <span className="cyber-key">{key}</span>
-                  </td>
-                  <td>{renderNestedValue(value)}</td>
+        <Card.Body className="p-0">
+          <div className="table-responsive">
+            <Table striped bordered hover className="mb-0">
+              <thead>
+                <tr>
+                  <th style={{ width: "120px", whiteSpace: "nowrap" }}>
+                    Field
+                  </th>
+                  <th>Value</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {Object.entries(data).map(([key, value]) => (
+                  <tr key={key}>
+                    <td style={{ whiteSpace: "nowrap" }}>{key}</td>
+                    <td style={{ minWidth: "200px" }}>
+                      {renderNestedValue(value)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
         </Card.Body>
       </Card>
     );
@@ -165,7 +164,6 @@ function App() {
     React.useEffect(() => {
       if (!jsonData) return;
 
-      // Permissions Chart
       const permissions = jsonData.permissions || {};
       const permissionsStatus = { dangerous: 0, normal: 0 };
       Object.values(permissions).forEach((perm) => {
@@ -173,13 +171,11 @@ function App() {
         else permissionsStatus.normal++;
       });
 
-      // Malware Chart
       const malwareData = jsonData.malware_permissions || {
         top_malware_permissions: 0,
         total_other_permissions: 0,
       };
 
-      // Severity Chart
       const manifestData = jsonData.manifest_analysis?.manifest_summary || {};
       const codeData = jsonData.code_analysis?.summary || {};
 
@@ -231,47 +227,60 @@ function App() {
         },
       });
     }, [jsonData]);
-
     if (!jsonData) return null;
 
     return (
-      <Card className="my-4 visualization-card">
-        <Card.Header className="cyber-header">
+      <Card className="my-3">
+        <Card.Header className="cyber-header py-2">
           <h5 className="mb-0">Analysis Visualization</h5>
         </Card.Header>
         <Card.Body>
-          <Row className="g-4">
+          <Row className="g-3">
             <Col md={6}>
-              <Card className="h-100">
-                <Card.Header>Permissions Distribution</Card.Header>
+              <Card>
+                <Card.Header className="py-2">
+                  Permissions Distribution
+                </Card.Header>
                 <Card.Body>
                   {charts.permissions && (
                     <Bar
                       data={charts.permissions}
-                      options={{ responsive: true }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: true,
+                      }}
                     />
                   )}
                 </Card.Body>
               </Card>
             </Col>
             <Col md={6}>
-              <Card className="h-100">
-                <Card.Header>Malware Permissions</Card.Header>
+              <Card>
+                <Card.Header className="py-2">Malware Permissions</Card.Header>
                 <Card.Body>
                   {charts.malware && (
-                    <Pie data={charts.malware} options={{ responsive: true }} />
+                    <Pie
+                      data={charts.malware}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: true,
+                      }}
+                    />
                   )}
                 </Card.Body>
               </Card>
             </Col>
             <Col md={12}>
               <Card>
-                <Card.Header>Severity Analysis</Card.Header>
+                <Card.Header className="py-2">Severity Analysis</Card.Header>
                 <Card.Body>
                   {charts.severity && (
                     <Bar
                       data={charts.severity}
-                      options={{ responsive: true }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: true,
+                      }}
                     />
                   )}
                 </Card.Body>
@@ -313,7 +322,7 @@ function App() {
     }
   };
 
-  const handleScan = async () => {
+  const handleScanAndScorecard = async () => {
     if (!hash) {
       setError("Please upload a file first");
       return;
@@ -321,10 +330,10 @@ function App() {
 
     setLoading(true);
     setError(null);
-    setStatus("Scanning APK...");
+    setStatus("Analyzing APK...");
 
     try {
-      const response = await axios.post(
+      const scanResponse = await axios.post(
         `${API_BASE_URL}/scan`,
         new URLSearchParams({ hash }),
         {
@@ -334,28 +343,10 @@ function App() {
           },
         }
       );
-      setScanReport(filterScanReport(response.data));
-      setStatus("Scan completed!");
-      setActiveTab("scan");
-    } catch (err) {
-      setError(`Scan failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setScanReport(filterScanReport(scanResponse.data));
+      setStatus("Scan completed, generating scorecard...");
 
-  const handleScorecard = async () => {
-    if (!hash) {
-      setError("Please upload and scan the file first");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setStatus("Generating scorecard...");
-
-    try {
-      const response = await axios.post(
+      const scorecardResponse = await axios.post(
         `${API_BASE_URL}/scorecard`,
         new URLSearchParams({ hash }),
         {
@@ -365,16 +356,19 @@ function App() {
           },
         }
       );
-      setScorecardReport(response.data);
-      setStatus("Scorecard generated!");
-      setActiveTab("scorecard");
+      setScorecardReport(scorecardResponse.data);
+      setStatus("Analysis completed!");
+      setActiveTab("scan");
+
+      setTimeout(() => {
+        scanReportRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (err) {
-      setError(`Scorecard generation failed: ${err.message}`);
+      setError(`Analysis failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
-
   const handleVisualize = async () => {
     if (!hash) {
       setError("Please complete the analysis first");
@@ -411,7 +405,7 @@ function App() {
   };
 
   return (
-    <Container fluid className="cyber-container py-5">
+    <Container fluid className="cyber-container py-3">
       <Card className="cyber-main-card">
         <Card.Header className="cyber-main-header">
           <h1 className="text-center mb-0">
@@ -422,7 +416,7 @@ function App() {
         </Card.Header>
 
         <Card.Body className="cyber-main-body">
-          <Form onSubmit={handleFileUpload} className="mb-4">
+          <Form onSubmit={handleFileUpload} className="mb-3">
             <Form.Group controlId="fileInput" className="mb-3">
               <Form.Label className="cyber-label">
                 <i className="fas fa-file-code me-2"></i>
@@ -457,29 +451,20 @@ function App() {
           </Form>
 
           {hash && (
-            <ButtonGroup className="d-flex gap-2 mb-4">
+            <ButtonGroup className="d-flex gap-2 mb-3">
               <Button
                 variant="cyber-info"
-                onClick={handleScan}
+                onClick={handleScanAndScorecard}
                 disabled={loading}
                 className="cyber-button"
               >
                 <i className="fas fa-search me-2"></i>
-                Scan APK
-              </Button>
-              <Button
-                variant="cyber-success"
-                onClick={handleScorecard}
-                disabled={loading || !scanReport}
-                className="cyber-button"
-              >
-                <i className="fas fa-chart-bar me-2"></i>
-                Generate Scorecard
+                Analyze APK
               </Button>
               <Button
                 variant="cyber-warning"
                 onClick={handleVisualize}
-                disabled={loading || !scorecardReport}
+                disabled={loading || !scanReport}
                 className="cyber-button"
               >
                 <i className="fas fa-chart-pie me-2"></i>
@@ -489,13 +474,13 @@ function App() {
           )}
 
           {error && (
-            <Alert variant="cyber-danger" className="cyber-alert">
+            <Alert variant="danger" className="cyber-alert mb-3">
               <i className="fas fa-exclamation-triangle me-2"></i>
               {error}
             </Alert>
           )}
           {status && !error && (
-            <Alert variant="cyber-info" className="cyber-alert">
+            <Alert variant="info" className="cyber-alert mb-3">
               <i className="fas fa-info-circle me-2"></i>
               {status}
             </Alert>
@@ -513,12 +498,20 @@ function App() {
             </Tab>
             <Tab eventKey="scan" title="Scan Report">
               {scanReport && (
-                <ReportTable data={scanReport} title="Scan Report" />
+                <ReportTable
+                  data={scanReport}
+                  title="Scan Report"
+                  ref={scanReportRef}
+                />
               )}
             </Tab>
             <Tab eventKey="scorecard" title="Scorecard Report">
               {scorecardReport && (
-                <ReportTable data={scorecardReport} title="Scorecard Report" />
+                <ReportTable
+                  data={scorecardReport}
+                  title="Scorecard Report"
+                  ref={scorecardReportRef}
+                />
               )}
             </Tab>
             <Tab eventKey="visualization" title="Visualization">
