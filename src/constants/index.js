@@ -35,17 +35,17 @@ import {
   twitter,
   yourlogo,
 } from "../assets";
-
+import { Link } from "react-router-dom";
 export const navigation = [
   {
     id: "0",
-    title: "Home",
-    url: "#home",
+    title: "Apk Anlaysis",
+    url: "Apk",
   },
   {
     id: "1",
-    title: "Features",
-    url: "#features",
+    title: "Dashboard",
+    url: "black-dashboard-react",
   },
   {
     id: "2",
@@ -94,39 +94,38 @@ export const brainwaveServicesIcons = [
 export const roadmap = [
   {
     id: "0",
-    title: "Voice recognition",
-    text: "Enable the chatbot to understand and respond to voice commands, making it easier for users to interact with the app hands-free.",
-    date: "May 2023",
+    title: "Preparation & Tool Selection",
+    text: "We start by defining the scope of the analysis, focusing on specific vulnerabilities. Reliable tools like MobSF, SonarQube, and Android Lint are selected to ensure a robust evaluation process.",
+    date: "September 2024",
     status: "done",
     imageUrl: roadmap1,
     colorful: true,
   },
   {
     id: "1",
-    title: "Gamification",
-    text: "Add game-like elements, such as badges or leaderboards, to incentivize users to engage with the chatbot more frequently.",
-    date: "May 2023",
+    title: "Code & Configuration Review",
+    text: "Our process involves thorough manual and automated code reviews to catch insecure practices. Additionally, we analyze AndroidManifest.xml and build.gradle files for misconfigurations.",
+    date: "November 2024",
     status: "progress",
     imageUrl: roadmap2,
   },
   {
     id: "2",
-    title: "Chatbot customization",
-    text: "Allow users to customize the chatbot's appearance and behavior, making it more engaging and fun to interact with.",
-    date: "May 2023",
+    title: "Dependency Management",
+    text: "We identify and assess third-party libraries to mitigate risks. Regular updates ensure all dependencies are secure and free from vulnerabilities.",
+    date: "January 2025",
     status: "done",
     imageUrl: roadmap3,
   },
   {
     id: "3",
-    title: "Integration with APIs",
-    text: "Allow the chatbot to access external data sources, such as weather APIs or news APIs, to provide more relevant recommendations.",
-    date: "May 2023",
+    title: "Reporting & Remediation",
+    text: "Detailed reports highlight vulnerabilities with prioritized fixes. Our team collaborates to integrate solutions, ensuring improved security and adherence to best coding practices",
+    date: "March 2025",
     status: "progress",
     imageUrl: roadmap4,
   },
 ];
-
 export const collabText =
   "With smart automation and top-notch security, it's the perfect solution for teams looking to work smarter.";
 

@@ -1,4 +1,4 @@
-import { curve, heroBackground } from "../assets";
+import { curve, heroBackground, robot } from "../assets";
 import Button from "./Button";
 import Section from "./Section";
 import { BackgroundCircles, BottomLine, Gradient } from "./design/Hero";
@@ -9,13 +9,15 @@ import Generating from "./Generating";
 import Notification from "./Notification";
 
 function Hero() {
-  const [file, setFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState(""); // State to manage upload status
+  const [file, setFile] = useState(null); // File state
+  const [uploadStatus, setUploadStatus] = useState(""); // Upload status state
 
+  // Handle file input changes
   const handleFileInputChange = (event) => {
     setFile(event.target.files[0]);
   };
 
+  // Handle form submission for file upload
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -28,7 +30,7 @@ function Hero() {
     formData.append("file_upload", file);
 
     try {
-      const endpoint = "http://localhost:8000/uploadfile/"; // Corrected typo
+      const endpoint = "http://localhost:8000/uploadfile/"; // API endpoint
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
@@ -76,17 +78,11 @@ function Hero() {
             early and ensure robust protection with our advanced static analysis
             framework.
           </p>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="file"
-              onChange={handleFileInputChange}
-              className="mb-4"
-              accept=".apk"
-            />
-            <Button>
-              <button type="submit">Upload Your APK File</button>
-            </Button>
-          </form>
+
+          {/* File Upload Form */}
+
+          <button type="submit">Upload Your APK File</button>
+
           {file && <p>Selected File: {file.name}</p>}
           {uploadStatus && <p className="mt-2 text-white">{uploadStatus}</p>}
         </div>
@@ -98,7 +94,7 @@ function Hero() {
               <div className="h-[1.4rem] bg-n-10 rounded-t-[0.9rem]" />
               <div className="aspect-[33/40] rounded-b-[0.9rem] overflow-hidden md:aspect-[688/490] lg:aspect-[1024/490]">
                 <img
-                  src={heroBackground}
+                  src={robot}
                   className="w-full scale-[1.7] translate-y-[8%] md:scale-[1] md:-translate-y-[10%] lg:-translate-y-[23%]"
                   width={1024}
                   height={490}

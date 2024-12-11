@@ -15,6 +15,7 @@
 
 * {
   scroll-behavior: smooth;
+  /* background-color: black !important ; */
 }
 
 @layer base {

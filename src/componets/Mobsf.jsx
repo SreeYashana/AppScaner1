@@ -1,38 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Button,
-  Form,
-  Container,
-  Card,
-  Spinner,
-  Alert,
-  Row,
-  Col,
-} from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { Pie } from "react-chartjs-2"; // For pie chart visualization
+import { Chart as ChartJS } from "chart.js/auto"; // Import chart.js
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
 const API_KEY =
-  "2af6be67c22c13ce59249819e3fc64b8fe8bfffddb68ccd2a8d20d729f2fee32";
+  "9bd61cdebb93e5e038050e99fe2cd389bd993367c2478173117217103f42c5dd";
 
-function App() {
+function Mobsf() {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState("");
   const [report, setReport] = useState(null);
   const [hash, setHash] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Function to parse and filter necessary data from the report
-  const parseRelevantData = (report) => {
-    return {
-      vulnerabilities: report.vulnerabilities || [],
-      permissions: report.permissions || [],
-      thirdPartyLibraries: report.third_party_libraries || [],
-      recommendations: report.recommendations || [],
-    };
-  };
+  const [permissionsData, setPermissionsData] = useState([]);
+  const [vulnerabilitiesData, setVulnerabilitiesData] = useState([]);
 
   // Generic API request handler
   const handleRequest = async (
@@ -48,7 +31,7 @@ function App() {
     try {
       const response = await axios({
         url: `${API_BASE_URL}/${endpoint}`,
-        method: method,
+        method,
         headers: {
           Authorization: API_KEY,
           "Content-Type": "application/x-www-form-urlencoded",
@@ -58,16 +41,16 @@ function App() {
       });
 
       if (responseType === "blob") {
-        // Handle file downloads (PDF, JSON)
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement("a");
         link.href = url;
         link.setAttribute(
           "download",
-          `${endpoint}` + (endpoint.includes("pdf") ? "pdf" : "json")
+          `${endpoint}.${endpoint.includes("pdf") ? "pdf" : "json"}`
         );
         document.body.appendChild(link);
         link.click();
+        link.remove();
         setStatus(`${endpoint} file downloaded successfully!`);
       } else {
         setReport(response.data);
@@ -83,8 +66,8 @@ function App() {
   // File upload handler
   const handleFileUpload = async (e) => {
     e.preventDefault();
-    if (!file) {
-      setError("Please select a file before uploading.");
+    if (!file || file.type !== "application/vnd.android.package-archive") {
+      setError("Please select a valid APK file.");
       return;
     }
 
@@ -100,139 +83,178 @@ function App() {
         headers: { Authorization: API_KEY },
       });
 
-      setHash(response.data.hash); // Assuming hash is returned
+      setPermissionsData(response.data.permissions || []);
+      setVulnerabilitiesData(response.data.vulnerabilities || []);
+      setHash(response.data.hash);
       setReport(response.data);
       setStatus("File uploaded successfully!");
     } catch (err) {
-      setError("Error uploading file: " + err.message);
+      setError(`Error uploading file: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  // Table rendering for permissions
+  const renderPermissionsTable = (permissions) => (
+    <table>
+      <thead>
+        <tr>
+          <th>Permission</th>
+          <th>Status</th>
+          <th>Info</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(permissions).map(([permission, details]) => (
+          <tr key={permission}>
+            <td>{permission}</td>
+            <td>{details.status}</td>
+            <td>{details.info}</td>
+            <td>{details.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+
+  // Table rendering for vulnerabilities
+  const renderVulnerabilitiesTable = (vulnerabilities) => (
+    <table>
+      <thead>
+        <tr>
+          <th>Vulnerability</th>
+          <th>Severity</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {vulnerabilities.map((vul, idx) => (
+          <tr key={idx}>
+            <td>{vul.name}</td>
+            <td>{vul.severity}</td>
+            <td>{vul.details}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+
+  // Pie Chart for Vulnerabilities Severity Distribution
+  const renderVulnerabilitiesChart = () => {
+    const severityCounts = { Low: 0, Medium: 0, High: 0 };
+
+    vulnerabilitiesData.forEach((vul) => {
+      severityCounts[vul.severity] += 1;
+    });
+
+    const data = {
+      labels: ["Low", "Medium", "High"],
+      datasets: [
+        {
+          label: "Vulnerabilities Severity",
+          data: [
+            severityCounts.Low,
+            severityCounts.Medium,
+            severityCounts.High,
+          ],
+          backgroundColor: ["#28a745", "#ffc107", "#dc3545"],
+        },
+      ],
+    };
+
+    return (
+      <div>
+        <h4>Vulnerabilities Severity Distribution</h4>
+        <Pie data={data} />
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    if (vulnerabilitiesData.length > 0) {
+      console.log("Vulnerabilities Data: ", vulnerabilitiesData);
+    }
+  }, [vulnerabilitiesData]);
+
   return (
-    <Container className="py-5">
-      <h1 className="text-center text-primary mb-4">APK Scanner</h1>
+    <div>
+      <h1>APK Scanner</h1>
 
-      <Card className="p-4 shadow-lg">
-        <Form onSubmit={handleFileUpload}>
-          <Form.Group controlId="fileInput" className="mb-3">
-            <Form.Label>Select APK File</Form.Label>
-            <Form.Control
-              type="file"
-              accept=".apk"
-              onChange={(e) => setFile(e.target.files[0])}
-              required
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit" disabled={loading}>
-            {loading ? <Spinner animation="border" size="sm" /> : "Upload File"}
-          </Button>
-        </Form>
+      <form onSubmit={handleFileUpload}>
+        <label>
+          Select APK File:
+          <input
+            type="file"
+            accept=".apk"
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+        </label>
+        <button type="submit" disabled={loading}>
+          {loading ? "Uploading..." : "Upload File"}
+        </button>
+      </form>
 
-        {error && (
-          <Alert className="mt-3" variant="danger">
-            {error}
-          </Alert>
-        )}
-        {status && !error && (
-          <Alert className="mt-3" variant="info">
-            {status}
-          </Alert>
-        )}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {status && !error && <p>{status}</p>}
 
-        {report && (
-          <>
-            <div className="mt-4">
-              <h4>Relevant Findings</h4>
-              <pre
-                className="bg-light p-3 rounded"
-                style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}
-              >
-                {JSON.stringify(parseRelevantData(report), null, 2)}
-              </pre>
+      {report && (
+        <>
+          {report.permissions && (
+            <div>
+              <h4>Permissions</h4>
+              {renderPermissionsTable(report.permissions)}
             </div>
-            <div className="mt-4">
-              <h5>Raw Report (Debug View)</h5>
-              <pre
-                className="bg-light p-3 rounded"
-                style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}
-              >
-                {JSON.stringify(report, null, 2)}
-              </pre>
+          )}
+          {report.vulnerabilities && (
+            <div>
+              <h4>Vulnerabilities</h4>
+              {renderVulnerabilitiesTable(report.vulnerabilities)}
             </div>
-          </>
-        )}
-      </Card>
+          )}
+          {vulnerabilitiesData.length > 0 && renderVulnerabilitiesChart()}
+        </>
+      )}
 
       {hash && (
-        <Row className="mt-4 text-center">
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="success"
-              onClick={() => handleRequest("scan", { hash })}
-            >
-              Fetch Scan Logs
-            </Button>
-          </Col>
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="info"
-              onClick={() => handleRequest("scorecard", { hash })}
-            >
-              Fetch Scorecard
-            </Button>
-          </Col>
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="warning"
+        <div>
+          {[
+            { label: "Fetch Scan Logs", action: "scan" },
+            { label: "Fetch Scorecard", action: "scorecard" },
+            { label: "Search Scans", action: "search", prompt: true },
+            {
+              label: "Download PDF Report",
+              action: "download_pdf",
+              type: "blob",
+            },
+            {
+              label: "Download JSON Report",
+              action: "report_json",
+              type: "blob",
+            },
+            { label: "Delete Scan", action: "delete_scan" },
+          ].map(({ label, action, type = "json", prompt = false }) => (
+            <button
+              key={action}
               onClick={() =>
-                handleRequest("search", {
-                  query: prompt("Enter search query:"),
-                })
+                handleRequest(
+                  action,
+                  prompt
+                    ? { query: window.prompt("Enter search query:") }
+                    : { hash },
+                  "POST",
+                  type
+                )
               }
             >
-              Search Scans
-            </Button>
-          </Col>
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="primary"
-              onClick={() =>
-                handleRequest("download_pdf", { hash }, "POST", "blob")
-              }
-            >
-              Download PDF Report
-            </Button>
-          </Col>
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="secondary"
-              onClick={() =>
-                handleRequest("report_json", { hash }, "POST", "blob")
-              }
-            >
-              Download JSON Report
-            </Button>
-          </Col>
-          <Col md={6}>
-            <Button
-              className="m-2"
-              variant="danger"
-              onClick={() => handleRequest("delete_scan", { hash })}
-            >
-              Delete Scan
-            </Button>
-          </Col>
-        </Row>
+              {label}
+            </button>
+          ))}
+        </div>
       )}
-    </Container>
+    </div>
   );
 }
 
-export default App;
+export default Mobsf;
