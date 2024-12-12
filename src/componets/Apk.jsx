@@ -40,7 +40,7 @@ ChartJS.register(
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
 const API_KEY =
-  " 4c2860337ced384f2e8b59651b6c06959f657de202b6f4dfadae22e6337e48a7";
+  "473dd081daf4e4b8285b10d049fb5ef18ed6fbf1f7eb80308cb008dcfbd5838c";
 
 function App() {
   const [file, setFile] = useState(null);
